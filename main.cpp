@@ -4,10 +4,12 @@
 #include <list>
 #include <string>
 #include <ctime>
-#include <fstream>
+#include <fstream>//æ–‡ä»¶è¯»å†™
 #include <sstream>
 #include <iomanip>
-//#include "list-hash.h"
+//#include <windows.h>
+#include "HashTable.h"
+#include "LinkedList.h"
 using namespace std;
 
 struct Book {
@@ -16,8 +18,8 @@ struct Book {
     string author;
     string publisher;
     int stock;
-    Book() : isbn(""), title(""), author(""), publisher(""), stock(0) {}
-    Book(string isbn, string title, string author, string publisher, int stock)
+    
+    Book(string isbn = "", string title = "", string author = "", string publisher = "", int stock = 0)
         : isbn(isbn), title(title), author(author), publisher(publisher), stock(stock) {}
 };
 
@@ -31,38 +33,38 @@ struct BorrowRecord {
         : user_id(user_id), isbn(isbn), borrow_date(borrow_date), due_date(due_date) {}
 };
 
-//Ìí¼ÓÍ¼Êé
+//æ·»åŠ å›¾ä¹¦
 void addBook(const string& isbn, const string& title, const string& author, const string& publisher, int stock);
-//½èÊé
+//å€Ÿä¹¦
 void borrowBook(int user_id, const string& isbn, time_t borrow_date, time_t due_date);
-//»¹Êé
+//è¿˜ä¹¦
 void returnBook(int user_id, const string& isbn);
-//¼ì²éÓâÆÚ
+//æ£€æŸ¥é€¾æœŸ
 void checkOverdue();
-//ÓâÆÚÌáĞÑ
+//é€¾æœŸæé†’
 void overdue();
-//È·±£ÎÄ¼ş´æÔÚ
+//ç¡®ä¿æ–‡ä»¶å­˜åœ¨
 void ensureFile(const string& filename);
-//¶ÁÈ¡book
+//è¯»å–book
 void loadBooksFromFile(const string& filename);
-//¶ÁÈ¡record
+//è¯»å–record
 void loadRecordsFromFile(const string& filename);
-//±£´æbook
+//ä¿å­˜book
 void saveBooksToFile(const string& filename);
-//±£´ærecord
+//ä¿å­˜record
 void saveRecordsToFile(const string& filename);
-//²Ëµ¥
+//èœå•
 void showMenu();
-//ÊäÈë
+//è¾“å…¥
 void input();
-//Í¼ÊéĞÅÏ¢
+//å›¾ä¹¦ä¿¡æ¯
 void outputbook();
-//½èÔÄ¼ÇÂ¼
+//å€Ÿé˜…è®°å½•
 void outpuborrow();
 
-unordered_map<string, Book> books; // Í¼Êé
+unordered_map<string, Book> books; // å›¾ä¹¦
 
-list<BorrowRecord> borrow_records; // ½èÔÄ
+LinkedList<BorrowRecord> borrow_records; // å€Ÿé˜…
 
 int main() {
     input();
@@ -72,27 +74,27 @@ int main() {
 
 void addBook(const string& isbn, const string& title, const string& author, const string& publisher, int stock) {
     if (books.find(isbn) != books.end()) {
-        cout << "Í¼ÊéÒÑ´æÔÚ£¬¸üĞÂ¿â´æÊıÁ¿¡£\n";
+        cout << "å›¾ä¹¦å·²å­˜åœ¨ï¼Œæ›´æ–°åº“å­˜æ•°é‡ã€‚\n";
         books[isbn].stock += stock;
     }
     else {
         books[isbn] = Book(isbn, title, author, publisher, stock);
-        cout << "Í¼ÊéÂ¼Èë³É¹¦¡£\n";
+        cout << "å›¾ä¹¦å½•å…¥æˆåŠŸã€‚\n";
     }
 }
 
 void borrowBook(int user_id, const string& isbn, time_t borrow_date, time_t due_date) {
     auto it = books.find(isbn);
     if (it == books.end()) {
-        cout << "Í¼Êé²»´æÔÚ¡£\n";
+        cout << "å›¾ä¹¦ä¸å­˜åœ¨ã€‚\n";
         return;
     }
     if (it->second.stock <= 0) {
-        cout << "¿â´æ²»×ã£¬ÎŞ·¨½èÔÄ¡£\n";
+        cout << "åº“å­˜ä¸è¶³ï¼Œæ— æ³•å€Ÿé˜…ã€‚\n";
         return;
     }
     it->second.stock -= 1;
-    cout << "½èÔÄ³É¹¦\n";
+    cout << "å€Ÿé˜…æˆåŠŸ\n";
 
     borrow_records.push_back({user_id, isbn, borrow_date, due_date});
 }
@@ -101,23 +103,23 @@ void returnBook(int user_id, const string& isbn) {
     for (auto it = borrow_records.begin(); it != borrow_records.end(); ++it) {
         if (it->user_id == user_id && it->isbn == isbn) {
             borrow_records.erase(it);
-            cout << "¹é»¹³É¹¦£¬½èÔÄ¼ÇÂ¼ÒÑÉ¾³ı¡£\n";
+            cout << "å½’è¿˜æˆåŠŸï¼Œå€Ÿé˜…è®°å½•å·²åˆ é™¤ã€‚\n";
             auto book_it = books.find(isbn);
             if (book_it != books.end()) {
                 book_it->second.stock += 1;
-                cout << "¿â´æÔö¼Ó1¡£\n";
+                cout << "åº“å­˜å¢åŠ 1ã€‚\n";
             }
             return;
         }
     }
-    cout << "Î´ÕÒµ½½èÔÄ¼ÇÂ¼¡£\n";
+    cout << "æœªæ‰¾åˆ°å€Ÿé˜…è®°å½•ã€‚\n";
 }
 
 void overdue(){
 	time_t now = time(nullptr);
 	for (const auto& record : borrow_records) {
 	    if (record.due_date < now) {
-	        cout << "³¬ÆÚÌáĞÑ£ºÓĞÓâÆÚ¼ÇÂ¼" << "\n"<< "\n";
+	        cout << "è¶…æœŸæé†’ï¼šæœ‰é€¾æœŸè®°å½•" << "\n"<< "\n";
 	        return ;
 	    }
 	}
@@ -129,13 +131,13 @@ void checkOverdue() {
     for (const auto& record : borrow_records) {
         if (record.due_date < now) {
             has_overdue = true;
-            cout << "³¬ÆÚÌáĞÑ£ºÓÃ»§ID: " << record.user_id 
-				 << ", Í¼ÊéISBN: " << record.isbn
-                 << ", Ó¦»¹ÈÕÆÚ: " << put_time(localtime(&record.due_date), "%Y-%m-%d %H:%M:%S") << "\n";
+            cout << "è¶…æœŸæé†’ï¼šç”¨æˆ·ID: " << record.user_id 
+				<< ", å›¾ä¹¦ISBN: " << record.isbn
+                << ", åº”è¿˜æ—¥æœŸ: " << put_time(localtime(&record.due_date), "%Y-%m-%d %H:%M:%S") << "\n";
         }
     }
     if (!has_overdue) {
-        cout << "Ã»ÓĞ³¬ÆÚµÄ½èÔÄ¼ÇÂ¼¡£\n";
+        cout << "æ²¡æœ‰è¶…æœŸçš„å€Ÿé˜…è®°å½•ã€‚\n";
     }
 }
 
@@ -144,10 +146,10 @@ void ensureFile(const string& filename) {
     if (!file) {
         ofstream newFile(filename);
         if (newFile) {
-            cout << "ÎÄ¼ş²»´æÔÚ£¬ÒÑ´´½¨ĞÂÎÄ¼ş: " << filename << "\n";
+            cout << "æ–‡ä»¶ä¸å­˜åœ¨ï¼Œå·²åˆ›å»ºæ–°æ–‡ä»¶: " << filename << "\n";
         }
         else {
-            cerr << "ÎŞ·¨´´½¨ÎÄ¼ş: " << filename << "\n";
+            cerr << "æ— æ³•åˆ›å»ºæ–‡ä»¶: " << filename << "\n";
         }
         newFile.close();
     }
@@ -158,7 +160,7 @@ void loadBooksFromFile(const string& filename) {
     ensureFile(filename);
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "ÎŞ·¨´ò¿ªÍ¼ÊéĞÅÏ¢ÎÄ¼ş: " << filename << "\n";
+        cerr << "æ— æ³•æ‰“å¼€å›¾ä¹¦ä¿¡æ¯æ–‡ä»¶: " << filename << "\n";
         return;
     }
     string line;
@@ -171,22 +173,22 @@ void loadBooksFromFile(const string& filename) {
                 books[isbn] = Book(isbn, title, author, publisher, stock);
             }
             catch (const invalid_argument& e) {
-                cerr << "Í¼ÊéĞÅÏ¢¸ñÊ½´íÎó£¨¿â´æ²»ÊÇÕûÊı£©: " << line << "\n";
+                cerr << "å›¾ä¹¦ä¿¡æ¯æ ¼å¼é”™è¯¯ï¼ˆåº“å­˜ä¸æ˜¯æ•´æ•°ï¼‰: " << line << "\n";
             }
         }
         else {
-            cerr << "Í¼ÊéĞÅÏ¢¸ñÊ½´íÎó: " << line << "\n";
+            cerr << "å›¾ä¹¦ä¿¡æ¯æ ¼å¼é”™è¯¯: " << line << "\n";
         }
     }
     file.close();
-    cout << "Í¼ÊéĞÅÏ¢¼ÓÔØÍê³É¡£\n";
+    cout << "å›¾ä¹¦ä¿¡æ¯åŠ è½½å®Œæˆã€‚\n";
 }
 
 void loadRecordsFromFile(const string& filename) {
     ensureFile(filename);
     ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "ÎŞ·¨´ò¿ª½èÔÄ¼ÇÂ¼ÎÄ¼ş: " << filename << "\n";
+        cerr << "æ— æ³•æ‰“å¼€å€Ÿé˜…è®°å½•æ–‡ä»¶: " << filename << "\n";
         return;
     }
     string line;
@@ -198,24 +200,24 @@ void loadRecordsFromFile(const string& filename) {
                 int user_id = stoi(user_id_str);
                 time_t borrow_date = stol(borrow_date_str);
                 time_t due_date = stol(due_date_str);
-                borrow_records.emplace_back(user_id, isbn, borrow_date, due_date);
+                borrow_records.push_back({ user_id, isbn, borrow_date, due_date });
             }
             catch (const invalid_argument& e) {
-                cerr << "½èÔÄ¼ÇÂ¼¸ñÊ½´íÎó£¨ÓÃ»§ID»òÊ±¼ä´Á²»ÊÇÕûÊı£©: " << line << "\n";
+                cerr << "å€Ÿé˜…è®°å½•æ ¼å¼é”™è¯¯ï¼ˆç”¨æˆ·IDæˆ–æ—¶é—´æˆ³ä¸æ˜¯æ•´æ•°ï¼‰: " << line << "\n";
             }
         }
         else {
-            cerr << "½èÔÄ¼ÇÂ¼¸ñÊ½´íÎó: " << line << "\n";
+            cerr << "å€Ÿé˜…è®°å½•æ ¼å¼é”™è¯¯: " << line << "\n";
         }
     }
     file.close();
-    cout << "½èÔÄ¼ÇÂ¼¼ÓÔØÍê³É¡£\n";
+    cout << "å€Ÿé˜…è®°å½•åŠ è½½å®Œæˆã€‚\n";
 }
 
 void saveBooksToFile(const string& filename) {
     ofstream file(filename);
     if (!file.is_open()) {
-        cerr << "ÎŞ·¨´ò¿ªÎÄ¼ş: " << filename << "\n";
+        cerr << "æ— æ³•æ‰“å¼€æ–‡ä»¶: " << filename << "\n";
         return;
     }
     for (const auto& pair : books) {
@@ -223,53 +225,61 @@ void saveBooksToFile(const string& filename) {
         file << book.isbn << "|" << book.title << "|" << book.author << "|" << book.publisher << "|" << book.stock << "\n";
     }
     file.close();
-    cout << "Í¼ÊéĞÅÏ¢ÒÑ±£´æµ½ÎÄ¼ş: " << filename << "\n";
+    cout << "å›¾ä¹¦ä¿¡æ¯å·²ä¿å­˜åˆ°æ–‡ä»¶: " << filename << "\n";
 }
 
 void saveRecordsToFile(const string& filename) {
     ofstream file(filename);
     if (!file.is_open()) {
-        cerr << "ÎŞ·¨´ò¿ªÎÄ¼ş: " << filename << "\n";
+        cerr << "æ— æ³•æ‰“å¼€æ–‡ä»¶: " << filename << "\n";
         return;
     }
     for (const auto& record : borrow_records) {
         file << record.user_id << "|" << record.isbn << "|" << record.borrow_date << "|" << record.due_date << "\n";
     }
     file.close();
-    cout << "½èÔÄ¼ÇÂ¼ÒÑ±£´æµ½ÎÄ¼ş: " << filename << "\n";
+    cout << "å€Ÿé˜…è®°å½•å·²ä¿å­˜åˆ°æ–‡ä»¶: " << filename << "\n";
 }
 
 void showMenu() {
-    cout << "»¶Ó­Ê¹ÓÃÍ¼Êé¹ÜÀíÏµÍ³\n";
-    cout << "1. Â¼ÈëÍ¼Êé\n";
-    cout << "2. ½èÔÄÍ¼Êé\n";
-    cout << "3. ¹é»¹Í¼Êé\n";
-    cout << "4. ¼ì²é³¬ÆÚ\n";
-    cout << "5. Í¼ÊéĞÅÏ¢\n";
-    cout << "6. ½èÔÄ¼ÇÂ¼\n";
-    cout << "7. ÍË³ö\n";
-    cout << "ÇëÊäÈëÑ¡Ïî: ";
+    cout << "æ¬¢è¿ä½¿ç”¨å›¾ä¹¦ç®¡ç†ç³»ç»Ÿ\n";
+    cout << "1. å½•å…¥å›¾ä¹¦\n";
+    cout << "2. å€Ÿé˜…å›¾ä¹¦\n";
+    cout << "3. å½’è¿˜å›¾ä¹¦\n";
+    cout << "4. æ£€æŸ¥è¶…æœŸ\n";
+    cout << "5. å›¾ä¹¦ä¿¡æ¯\n";
+    cout << "6. å€Ÿé˜…è®°å½•\n";
+    cout << "7. é€€å‡º\n";
+    cout << "è¯·è¾“å…¥é€‰é¡¹: ";
 }
 
-void outputbook() {
-    cout << "Í¼ÊéĞÅÏ¢£º" << endl;
+void outputbook() { 
+    if (books.empty()) {
+        cout << "æš‚æ— å›¾ä¹¦ä¿¡æ¯ã€‚\n";
+        return;
+    }
+    cout << "å›¾ä¹¦ä¿¡æ¯ï¼š" << endl;
     for (const auto& book : books) {
         cout << "ISBN: " << book.second.isbn << endl;
-        cout << "±êÌâ: " << book.second.title << endl;
-        cout << "×÷Õß: " << book.second.author << endl;
-        cout << "³ö°æÉç: " << book.second.publisher << endl;
-        cout << "¿â´æ: " << book.second.stock << endl;
+        cout << "æ ‡é¢˜: " << book.second.title << endl;
+        cout << "ä½œè€…: " << book.second.author << endl;
+        cout << "å‡ºç‰ˆç¤¾: " << book.second.publisher << endl;
+        cout << "åº“å­˜: " << book.second.stock << endl;
         cout << endl;
     }
 }
 
 void outpuborrow() {
-    cout << "½èÔÄ¼ÇÂ¼£º" << endl;
+    if (borrow_records.empty()) {
+        cout << "æš‚æ— å€Ÿé˜…è®°å½•ã€‚\n";
+        return;
+    }
+    cout << "å€Ÿé˜…è®°å½•ï¼š" << endl;
     for (const auto& record : borrow_records) {
-        cout << "ÓÃ»§ID: " << record.user_id << endl;
-        cout << "Í¼ÊéISBN: " << record.isbn << endl;
-        cout << "½èÔÄÈÕÆÚ: " << put_time(localtime(&record.borrow_date), "%Y-%m-%d %H:%M:%S") << endl;
-        cout << "Ó¦»¹ÈÕÆÚ: " << put_time(localtime(&record.due_date), "%Y-%m-%d %H:%M:%S") << endl;
+        cout << "ç”¨æˆ·ID: " << record.user_id << endl;
+        cout << "å›¾ä¹¦ISBN: " << record.isbn << endl;
+        cout << "å€Ÿé˜…æ—¥æœŸ: " << put_time(localtime(&record.borrow_date), "%Y-%m-%d %H:%M:%S") << endl;
+        cout << "åº”è¿˜æ—¥æœŸ: " << put_time(localtime(&record.due_date), "%Y-%m-%d %H:%M:%S") << endl;
         cout << endl;
     }
 }
@@ -282,59 +292,59 @@ void input() {
     while (true) {
         showMenu();
         cin >> choice;
-        if (choice == 1) { // Â¼ÈëÍ¼Êé
+        if (choice == 1) { // å½•å…¥å›¾ä¹¦
             string isbn, title, author, publisher;
             int stock;
-            cout << "ÇëÊäÈëISBN: ";
+            cout << "è¯·è¾“å…¥ISBN: ";
             cin >> isbn;
-            cout << "ÇëÊäÈë±êÌâ: ";
-            cin.ignore(); // ºöÂÔÇ°ÃæµÄ»»ĞĞ·û
+            cout << "è¯·è¾“å…¥æ ‡é¢˜: ";
+            cin.ignore(); // å¿½ç•¥å‰é¢çš„æ¢è¡Œç¬¦
             getline(cin, title);
-            cout << "ÇëÊäÈë×÷Õß: ";
+            cout << "è¯·è¾“å…¥ä½œè€…: ";
             getline(cin, author);
-            cout << "ÇëÊäÈë³ö°æÉç: ";
+            cout << "è¯·è¾“å…¥å‡ºç‰ˆç¤¾: ";
             getline(cin, publisher);
-            cout << "ÇëÊäÈë¿â´æ: ";
+            cout << "è¯·è¾“å…¥åº“å­˜: ";
             cin >> stock;
             addBook(isbn, title, author, publisher, stock);
         }
-        else if (choice == 2) { // ½èÔÄÍ¼Êé
+        else if (choice == 2) { // å€Ÿé˜…å›¾ä¹¦
             int user_id;
             string isbn;
-            cout << "ÇëÊäÈëÓÃ»§ID: ";
+            cout << "è¯·è¾“å…¥ç”¨æˆ·ID: ";
             cin >> user_id;
-            cout << "ÇëÊäÈëISBN: ";
+            cout << "è¯·è¾“å…¥ISBN: ";
             cin >> isbn;
             time_t borrow_date = time(nullptr);
-            time_t due_date = borrow_date + 604800; // 7Ììºó
+            time_t due_date = borrow_date + 604800; // 7å¤©å
             borrowBook(user_id, isbn, borrow_date, due_date);
         }
-        else if (choice == 3) { // ¹é»¹Í¼Êé
+        else if (choice == 3) { // å½’è¿˜å›¾ä¹¦
             int user_id;
             string isbn;
-            cout << "ÇëÊäÈëÓÃ»§ID: ";
+            cout << "è¯·è¾“å…¥ç”¨æˆ·ID: ";
             cin >> user_id;
-            cout << "ÇëÊäÈëISBN: ";
+            cout << "è¯·è¾“å…¥ISBN: ";
             cin >> isbn;
             returnBook(user_id, isbn);
         }
-        else if (choice == 4) { // ¼ì²é³¬ÆÚ
+        else if (choice == 4) { // æ£€æŸ¥è¶…æœŸ
             checkOverdue();
         }
-        else if (choice == 5) { // Í¼ÊéĞÅÏ¢
+        else if (choice == 5) { // å›¾ä¹¦ä¿¡æ¯
             outputbook();
         }
-        else if (choice == 6) { // ½èÔÄ¼ÇÂ¼
+        else if (choice == 6) { // å€Ÿé˜…è®°å½•
             outpuborrow();
         }
-        else if (choice == 7) { // ÍË³ö
+        else if (choice == 7) { // é€€å‡º
             saveBooksToFile("books.txt");
             saveRecordsToFile("borrow_records.txt");
-            cout << "ÍË³öÏµÍ³¡£\n";
+            cout << "é€€å‡ºç³»ç»Ÿã€‚\n";
             break;
         }
         else {
-            cout << "ÎŞĞ§Ñ¡Ïî£¬ÇëÖØĞÂÊäÈë¡£\n";
+            cout << "æ— æ•ˆé€‰é¡¹ï¼Œè¯·é‡æ–°è¾“å…¥ã€‚\n";
         }
         system("pause");
         system("cls");
