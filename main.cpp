@@ -1,15 +1,15 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <iostream>
-#include <unordered_map>
-#include <list>
 #include <string>
-#include <ctime>
-#include <fstream>//文件读写
-#include <sstream>
-#include <iomanip>
-//#include <windows.h>
-#include "HashTable.h"
+#include <ctime>// for time_t
+#include <fstream>// for file operations
+#include <sstream>// for stringstream
+#include <iomanip>// for setw
+#include "HashMap.h"
 #include "LinkedList.h"
+//#include <unordered_map>
+//#include <list>
+//#include <windows.h>
 using namespace std;
 
 struct Book {
@@ -21,6 +21,11 @@ struct Book {
     
     Book(string isbn = "", string title = "", string author = "", string publisher = "", int stock = 0)
         : isbn(isbn), title(title), author(author), publisher(publisher), stock(stock) {}
+    friend std::ostream& operator<<(std::ostream& os, const Book& book) {
+        os << "ISBN: " << book.isbn << ", Title: " << book.title << ", Author: " << book.author
+            << ", Publisher: " << book.publisher << ", Stock: " << book.stock;
+        return os;
+    }
 };
 
 struct BorrowRecord {
@@ -45,24 +50,24 @@ void checkOverdue();
 void overdue();
 //确保文件存在
 void ensureFile(const string& filename);
-//读取book
+//读取book.txt
 void loadBooksFromFile(const string& filename);
-//读取record
+//读取record.txt
 void loadRecordsFromFile(const string& filename);
-//保存book
+//保存book.txt
 void saveBooksToFile(const string& filename);
-//保存record
+//保存record.txt
 void saveRecordsToFile(const string& filename);
-//菜单
+//输出菜单
 void showMenu();
-//输入
+//处理输入
 void input();
 //图书信息
 void outputbook();
 //借阅记录
 void outpuborrow();
 
-unordered_map<string, Book> books; // 图书
+HashMap<string, Book> books; // 图书
 
 LinkedList<BorrowRecord> borrow_records; // 借阅
 
@@ -165,12 +170,14 @@ void loadBooksFromFile(const string& filename) {
     }
     string line;
     while (getline(file, line)) {
+        //cout << "正在处理行: " << line << "\n"; // 调试信息
         stringstream ss(line);
         string isbn, title, author, publisher, stock_str;
         if (getline(ss, isbn, '|') && getline(ss, title, '|') && getline(ss, author, '|') && getline(ss, publisher, '|') && getline(ss, stock_str)) {
             try {
                 int stock = stoi(stock_str);
                 books[isbn] = Book(isbn, title, author, publisher, stock);
+                //cout << "成功加载图书: " << isbn << " - " << title << "\n"; // 调试信息
             }
             catch (const invalid_argument& e) {
                 cerr << "图书信息格式错误（库存不是整数）: " << line << "\n";
